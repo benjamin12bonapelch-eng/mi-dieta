@@ -309,3 +309,8 @@ button { cursor: pointer; }
   background: var(--card); color: var(--text); box-shadow: var(--shadow);
 }
 .chip.activo { background: var(--accent); color: #fff; }
+
+/* Cantidad en gramos de cada alimento del plato */
+.gramos { display: flex; align-items: baseline; gap: 2px; background: var(--card2); border-radius: 8px; padding: 6px 8px; }
+.gramos input { width: 46px; border: 0; background: none; outline: none; text-align: right; color: var(--text); font-variant-numeric: tabular-nums; padding: 0; }
+.gramos span { color: var(--text2); font-size: 13px; }

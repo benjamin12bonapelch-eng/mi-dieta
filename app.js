@@ -595,6 +595,21 @@ function htmlResultados(q) {
     <span class="valor">${fmt(a.k)} kcal</span><span style="color:var(--accent-ink);font-size:22px;line-height:1">+</span></button>`).join('');
 }
 
+function baseGramos(it) {
+  const m = String(it.por || '').match(/(\d+(?:[.,]\d+)?)\s*(g|ml)\b/i);
+  return m ? { cant: num(m[1]), u: m[2].toLowerCase() } : null;
+}
+function controlCantidad(it, i) {
+  const b = baseGramos(it);
+  if (!b || !b.cant) {
+    return `<div class="mult"><button data-accion="ed-mult" data-i="${i}" data-d="-1" aria-label="Menos">−</button><span>×${fmt(it.x ?? 1, 2)}</span><button data-accion="ed-mult" data-i="${i}" data-d="1" aria-label="Más">+</button></div>`;
+  }
+  const actual = Math.round(b.cant * (it.x ?? 1));
+  return `<div class="mult"><button data-accion="ed-gramos" data-i="${i}" data-d="-1" aria-label="Menos">−</button>
+    <label class="gramos"><input inputmode="decimal" data-ed-gramos="${i}" value="${actual}" aria-label="Cantidad en ${b.u}"><span>${b.u}</span></label>
+    <button data-accion="ed-gramos" data-i="${i}" data-d="1" aria-label="Más">+</button></div>`;
+}
+
 function htmlEditor() {
   const t = totalesItems(ed.items);
   let h = '';
@@ -623,6 +638,8 @@ function htmlEditor() {
           <label>Carb. g<input id="ci-c" inputmode="decimal" placeholder="0"></label>
           <label>Grasa g<input id="ci-g" inputmode="decimal" placeholder="0"></label>
         </div>
+        <div class="fila" style="padding-top:0"><span class="crece" style="font-size:14px;color:var(--text2)">Esos valores son para (opcional)</span>
+          <input id="ci-gr" inputmode="decimal" placeholder="gramos" style="width:90px"></div>
         <div style="padding:0 16px"><button class="btn gris" data-accion="ed-agregar-manual">Agregar</button></div>
       </div></details>`;
 
@@ -630,10 +647,10 @@ function htmlEditor() {
   h += `<div class="titulo-seccion">En este plato</div>`;
   if (ed.items.length) {
     h += `<div class="lista">${ed.items.map((it, i) => `<div class="fila">
-      <div class="crece"><div class="principal">${esc(it.n)}</div>
-      <div class="secundario">${esc(it.por || '')}${it.por ? ' · ' : ''}${fmt(it.k * (it.x ?? 1))} kcal · P ${fmt(it.p * (it.x ?? 1), 1)} · C ${fmt(it.c * (it.x ?? 1), 1)} · G ${fmt(it.g * (it.x ?? 1), 1)}</div>
+      <div class="crece"><div class="principal" style="white-space:normal">${esc(it.n)}</div>
+      <div class="secundario">${baseGramos(it) ? '' : esc(it.por || '') + (it.por ? ' · ' : '')}${fmt(it.k * (it.x ?? 1))} kcal · P ${fmt(it.p * (it.x ?? 1), 1)} · C ${fmt(it.c * (it.x ?? 1), 1)} · G ${fmt(it.g * (it.x ?? 1), 1)}</div>
       <button class="quitar" data-accion="ed-quitar" data-i="${i}">Quitar</button></div>
-      <div class="mult"><button data-accion="ed-mult" data-i="${i}" data-d="-1" aria-label="Menos">−</button><span>×${fmt(it.x ?? 1, 2)}</span><button data-accion="ed-mult" data-i="${i}" data-d="1" aria-label="Más">+</button></div>
+      ${controlCantidad(it, i)}
     </div>`).join('')}</div>
     <div class="tarjeta"><div class="totales">
       <div><div class="num">${fmt(t.k)}</div><div class="etq">kcal</div></div>
@@ -873,13 +890,14 @@ const ACCIONES = {
   },
   'ed-agregar-manual'() {
     const n = $('#ci-n').value.trim();
-    const it = { n: n || 'Alimento', por: '', k: Math.round(num($('#ci-k').value)), p: r1(num($('#ci-p').value)), c: r1(num($('#ci-c').value)), g: r1(num($('#ci-g').value)), x: 1 };
+    const gr = Math.round(num(($('#ci-gr') || {}).value));
+    const it = { n: n || 'Alimento', por: gr > 0 ? `${gr} g` : '', k: Math.round(num($('#ci-k').value)), p: r1(num($('#ci-p').value)), c: r1(num($('#ci-c').value)), g: r1(num($('#ci-g').value)), x: 1 };
     if (!it.k && !it.p && !it.c && !it.g) { toast('Completá al menos las calorías'); return; }
     if (!it.k) it.k = Math.round(it.p * 4 + it.c * 4 + it.g * 9);
     ed.items.push(it);
     if (n) { // queda guardado en "tus alimentos" para buscarlo la próxima vez
       S.misAlimentos = (S.misAlimentos || []).filter((x) => normalizar(x.n) !== normalizar(n));
-      S.misAlimentos.unshift({ n, por: '1 porción', k: it.k, p: it.p, c: it.c, g: it.g });
+      S.misAlimentos.unshift({ n, por: it.por || '1 porción', k: it.k, p: it.p, c: it.c, g: it.g });
       guardar();
       toast('Guardado en tus alimentos');
     }
@@ -889,6 +907,14 @@ const ACCIONES = {
   'ed-mult'(el) {
     const it = ed.items[+el.dataset.i];
     it.x = Math.max(0.25, Math.min(10, (it.x ?? 1) + 0.25 * +el.dataset.d));
+    pintarEditor();
+  },
+  'ed-gramos'(el) {
+    const it = ed.items[+el.dataset.i], b = baseGramos(it); if (!b) return;
+    const paso = b.cant >= 60 ? 10 : 5;
+    const actual = Math.round(b.cant * (it.x ?? 1));
+    const nuevo = Math.max(paso, Math.round((actual + paso * +el.dataset.d) / paso) * paso);
+    it.x = nuevo / b.cant;
     pintarEditor();
   },
   'ed-guardar'() { guardarComida(); },
@@ -988,6 +1014,11 @@ document.addEventListener('change', async (e) => {
     h[c] = c === 'meta' ? num(el.value) : el.value;
     if (c === 'tipo') { if (h.tipo === 'check') h.meta = 1; else if (!h.meta || h.meta === 1) h.meta = h.tipo === 'contador' ? 8 : 1; $('#hoja-cuerpo').innerHTML = htmlEditarHabitos(); }
     guardar();
+  } else if (el.dataset.edGramos && ed) {
+    const it = ed.items[+el.dataset.edGramos], b = it && baseGramos(it);
+    const v = num(el.value);
+    if (b && v > 0) it.x = Math.min(5000, v) / b.cant;
+    pintarEditor();
   } else if (el.dataset.ed && ed) {
     ed[el.dataset.ed] = el.value;
   } else if (el.classList.contains('archivo-foto') && el.files[0] && ed) {
