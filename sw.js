@@ -1,6 +1,6 @@
 // Service worker: guarda la app en el teléfono para que abra sin conexión.
 // Al cambiar cualquier archivo, subir el número de VERSION para que se actualice.
-const VERSION = 'mi-dieta-v10';
+const VERSION = 'mi-dieta-v11';
 const ARCHIVOS = [
   './',
   'index.html',
@@ -8,6 +8,7 @@ const ARCHIVOS = [
   'app.js',
   'cuenta.js',
   'alimentos.js',
+  'recetas.js',
   'manifest.webmanifest',
   'icons/icon-192.png',
   'icons/icon-512.png',

@@ -45,12 +45,14 @@
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; padding: 0; }
+html, body { margin: 0; padding: 0; touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+button, a, label, input, select, textarea, summary { touch-action: manipulation; }
+input, select, textarea { font-size: 16px !important; }
 body {
   background: var(--bg);
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  font-size: 17px;
+  font-size: 16px;
   line-height: 1.3;
   -webkit-font-smoothing: antialiased;
   overscroll-behavior-y: none;
@@ -66,8 +68,8 @@ button { cursor: pointer; }
 /* Encabezado grande estilo iOS */
 .cabecera { display: flex; align-items: flex-end; justify-content: space-between; margin: 6px 4px 14px; gap: 12px; }
 .cabecera .sub { color: var(--text2); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .02em; }
-.cabecera h1 { font-size: 34px; font-weight: 700; letter-spacing: .01em; margin: 2px 0 0; }
-.boton-texto { background: none; border: 0; color: var(--blue); font-size: 17px; padding: 6px 2px; }
+.cabecera h1 { font-size: 30px; font-weight: 700; letter-spacing: .01em; margin: 2px 0 0; }
+.boton-texto { background: none; border: 0; color: var(--blue); font-size: 16px; padding: 10px 8px; min-height: 44px; }
 .boton-circulo {
   width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--card);
   color: var(--blue); display: grid; place-items: center; box-shadow: var(--shadow);
@@ -81,12 +83,12 @@ button { cursor: pointer; }
 .nota-seccion { color: var(--text2); font-size: 13px; margin: -8px 16px 16px; line-height: 1.4; }
 .lista { background: var(--card); border-radius: var(--radius); margin-bottom: 16px; overflow: hidden; box-shadow: var(--shadow); }
 .fila {
-  display: flex; align-items: center; gap: 12px; padding: 11px 16px; min-height: 44px; position: relative;
+  display: flex; align-items: center; gap: 12px; padding: 11px 16px; min-height: 48px; position: relative;
   background: none; border: 0; width: 100%; text-align: left;
 }
 .fila + .fila::before { content: ""; position: absolute; top: 0; left: 16px; right: 0; height: .5px; background: var(--sep); }
 .fila .crece { flex: 1; min-width: 0; }
-.principal { font-size: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.principal { font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .secundario { font-size: 13px; color: var(--text2); margin-top: 2px; }
 .fila .valor { color: var(--text2); white-space: nowrap; }
 .fila input, .fila select {
@@ -101,10 +103,10 @@ button { cursor: pointer; }
 
 /* Anillo de calorías */
 .resumen { display: flex; align-items: center; gap: 18px; }
-.anillo { position: relative; width: 148px; height: 148px; flex: none; }
+.anillo { position: relative; width: 132px; height: 132px; flex: none; }
 .anillo svg { width: 100%; height: 100%; transform: rotate(-90deg); }
 .anillo .centro { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
-.anillo .num { font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.anillo .num { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
 .anillo .etq { font-size: 12px; color: var(--text2); }
 .datos-anillo { flex: 1; display: grid; gap: 10px; }
 .dato .etq { font-size: 13px; color: var(--text2); }
@@ -118,7 +120,7 @@ button { cursor: pointer; }
 
 /* Selector de día */
 .navdia { display: flex; align-items: center; justify-content: space-between; margin: 0 0 12px; }
-.navdia button { background: none; border: 0; color: var(--blue); padding: 8px; display: grid; place-items: center; }
+.navdia button { background: none; border: 0; color: var(--blue); width: 48px; height: 44px; display: grid; place-items: center; }
 .navdia button:disabled { color: var(--text3); }
 .navdia svg { width: 12px; height: 20px; }
 .navdia .fecha { font-weight: 600; font-size: 15px; }
@@ -127,8 +129,9 @@ button { cursor: pointer; }
 .habito { display: flex; align-items: center; gap: 12px; padding: 12px 16px; position: relative; }
 .habito + .habito::before { content: ""; position: absolute; top: 0; left: 60px; right: 0; height: .5px; background: var(--sep); }
 .check {
-  width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--text3); background: none; flex: none;
+  width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--text3); background: none; flex: none;
   display: grid; place-items: center; padding: 0; transition: background .15s, border-color .15s;
+  box-shadow: 0 0 0 6px transparent; /* agranda la zona táctil sin cambiar el dibujo */
 }
 .check svg { width: 16px; height: 16px; opacity: 0; color: #fff; }
 .check.hecho { background: var(--accent); border-color: var(--accent); }
@@ -137,8 +140,8 @@ button { cursor: pointer; }
 .progreso-habito svg { width: 30px; height: 30px; transform: rotate(-90deg); }
 .contador { display: flex; align-items: center; gap: 6px; }
 .contador button {
-  width: 32px; height: 32px; border-radius: 50%; border: 0; background: var(--card2); color: var(--accent-ink);
-  font-size: 20px; line-height: 1; display: grid; place-items: center; padding: 0;
+  width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--card2); color: var(--accent-ink);
+  font-size: 22px; line-height: 1; display: grid; place-items: center; padding: 0;
 }
 .contador .v { min-width: 44px; text-align: center; font-variant-numeric: tabular-nums; font-weight: 600; }
 .entrada-num {
@@ -152,7 +155,7 @@ button { cursor: pointer; }
 
 /* Botones */
 .btn {
-  display: block; width: 100%; border: 0; border-radius: 12px; padding: 14px 16px; font-size: 17px; font-weight: 600;
+  display: block; width: 100%; border: 0; border-radius: 12px; padding: 13px 16px; font-size: 16px; font-weight: 600; min-height: 48px;
   background: var(--accent); color: #fff; text-align: center;
 }
 .btn.secundario { background: var(--card); color: var(--blue); font-weight: 400; box-shadow: var(--shadow); }
@@ -182,10 +185,10 @@ button { cursor: pointer; }
 }
 .pestanas .contenido { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); }
 .pestanas button {
-  background: none; border: 0; padding: 7px 0 5px; display: grid; justify-items: center; gap: 2px;
-  color: var(--text3); font-size: 10px; font-weight: 500;
+  background: none; border: 0; padding: 8px 0 6px; min-height: 52px; display: grid; justify-items: center; gap: 2px;
+  color: var(--text3); font-size: 11px; font-weight: 500;
 }
-.pestanas button svg { width: 26px; height: 26px; }
+.pestanas button svg { width: 25px; height: 25px; }
 .pestanas button.activa { color: var(--accent-ink); }
 
 /* Hoja modal (sheet) */
@@ -210,7 +213,7 @@ button { cursor: pointer; }
 /* Segmentado */
 .segmentado { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--card2); border-radius: 9px; padding: 2px; margin-bottom: 16px; }
 @media (prefers-color-scheme: light) { .segmentado { background: rgba(118, 118, 128, .12); } }
-.segmentado button { border: 0; background: none; padding: 6px 4px; border-radius: 7px; font-size: 13px; font-weight: 500; }
+.segmentado button { border: 0; background: none; padding: 9px 6px; min-height: 38px; border-radius: 7px; font-size: 14px; font-weight: 500; line-height: 1.2; }
 .segmentado button.activo { background: var(--card); box-shadow: 0 2px 6px rgba(0, 0, 0, .12); }
 @media (prefers-color-scheme: dark) { .segmentado button.activo { background: #636366; } }
 
@@ -234,9 +237,9 @@ button { cursor: pointer; }
 .campos-item label { font-size: 12px; color: var(--text2); display: grid; gap: 3px; }
 .campos-item input { width: 100%; border: 0; background: var(--card2); border-radius: 8px; padding: 7px 8px; outline: none; }
 .mult { display: flex; align-items: center; gap: 4px; }
-.mult button { width: 28px; height: 28px; border-radius: 50%; border: 0; background: var(--card2); color: var(--accent-ink); font-size: 17px; padding: 0; }
+.mult button { width: 38px; height: 38px; border-radius: 50%; border: 0; background: var(--card2); color: var(--accent-ink); font-size: 17px; padding: 0; }
 .mult span { min-width: 34px; text-align: center; font-size: 14px; font-variant-numeric: tabular-nums; }
-.quitar { background: none; border: 0; color: var(--red); font-size: 14px; padding: 4px; }
+.quitar { background: none; border: 0; color: var(--red); font-size: 14px; padding: 10px 12px 10px 0; margin: -4px 0 -8px; }
 
 .cargando { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 22px; color: var(--text2); }
 .ruedita { width: 20px; height: 20px; border: 2.5px solid var(--text3); border-top-color: var(--accent); border-radius: 50%; animation: gira .8s linear infinite; }
@@ -265,7 +268,7 @@ button { cursor: pointer; }
   padding: calc(env(safe-area-inset-top) + 16px) 20px calc(env(safe-area-inset-bottom) + 24px);
 }
 .logo { width: 76px; height: 76px; border-radius: 18px; display: block; margin: 36px auto 14px; box-shadow: 0 6px 18px rgba(0, 0, 0, .15); }
-.titulo-grande { font-size: 30px; font-weight: 700; text-align: center; margin: 0 0 6px; }
+.titulo-grande { font-size: 28px; font-weight: 700; text-align: center; margin: 0 0 6px; }
 .bajada { color: var(--text2); text-align: center; margin: 0 0 26px; font-size: 16px; }
 .fila input.izq { width: 100%; text-align: left; color: var(--text); padding: 4px 0; }
 .enlace { background: none; border: 0; color: var(--blue); font-size: 15px; display: block; margin: 16px auto 0; padding: 6px; }
@@ -277,7 +280,7 @@ button { cursor: pointer; }
 .progreso-q { height: 4px; background: var(--card2); border-radius: 2px; overflow: hidden; margin: 6px 0 26px; }
 @media (prefers-color-scheme: light) { .progreso-q { background: rgba(118, 118, 128, .16); } }
 .progreso-q i { display: block; height: 100%; background: var(--accent); border-radius: 2px; transition: width .3s; }
-.pregunta { font-size: 30px; font-weight: 700; line-height: 1.15; margin: 0 0 8px; letter-spacing: .005em; }
+.pregunta { font-size: 26px; font-weight: 700; line-height: 1.15; margin: 0 0 8px; letter-spacing: .005em; }
 .ayuda-q { color: var(--text2); font-size: 16px; margin: 0 0 22px; line-height: 1.4; }
 .pregunta + div { margin-top: 18px; }
 .opcion {
@@ -293,6 +296,7 @@ button { cursor: pointer; }
 .opcion.sel .marca { background: var(--accent); border-color: var(--accent); }
 .opcion.sel .marca svg { opacity: 1; }
 .entrada-grande { display: flex; align-items: baseline; gap: 8px; background: var(--card); border-radius: 14px; padding: 12px 18px; box-shadow: var(--shadow); }
-.entrada-grande input { flex: 1; min-width: 0; border: 0; background: none; outline: none; font-size: 36px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.entrada-grande input { flex: 1; min-width: 0; border: 0; background: none; outline: none; font-size: 32px !important; font-weight: 600; font-variant-numeric: tabular-nums; }
 .entrada-grande span { color: var(--text2); font-size: 20px; }
 .pie-q { margin-top: auto; padding-top: 24px; }
+@media (prefers-color-scheme: light) { .hoja .btn.gris { background: var(--card); box-shadow: var(--shadow); } }

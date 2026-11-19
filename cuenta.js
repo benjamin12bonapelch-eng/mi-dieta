@@ -234,8 +234,8 @@ const PREGUNTAS = [
   {
     id: 'objetivo', tipo: 'opciones', titulo: '¿Qué querés lograr con tu físico?', opciones: () => [
       ['bajar', 'Bajar grasa', 'Perder peso cuidando el músculo'],
-      ['recomp', 'Recomposición', 'Bajar grasa y ganar músculo a la vez, más despacio'],
-      ['ganar', 'Ganar músculo', 'Subir de peso acompañado de entrenamiento'],
+      ['recomp', 'Ganar músculo y bajar grasa', 'Las dos cosas a la vez (recomposición): comés un poco por debajo de tu mantenimiento, con mucha proteína y entrenando fuerza'],
+      ['ganar', 'Ganar músculo', 'Priorizar el músculo aunque subas algo de peso'],
       ['mantener', 'Mantenerme', 'Sostener el peso y mejorar los hábitos']
     ]
   },
@@ -351,7 +351,7 @@ function resumenCuestionario(r) {
   const m = metas();
   S.perfil = guardado; S.pesos = pesosGuardados;
   const texto = {
-    bajar: 'Para bajar grasa', recomp: 'Para recomponer (bajar grasa y ganar músculo)', ganar: 'Para ganar músculo', mantener: 'Para mantenerte'
+    bajar: 'Para bajar grasa', recomp: 'Para ganar músculo y bajar grasa a la vez', ganar: 'Para ganar músculo', mantener: 'Para mantenerte'
   }[r.objetivo];
   const recs = SUPLEMENTOS.filter((s) => (r.suplementos || []).includes(s.id));
   const habs = HABITOS_BASE.filter((h) => (r.habitos || []).includes(h.id));

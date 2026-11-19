@@ -11,7 +11,7 @@ const ACTIVIDAD = [
   [1.725, 'Alta', 'Ejercicio 6 a 7 días por semana'],
   [1.9, 'Muy alta', 'Trabajo físico o doble turno']
 ];
-const OBJETIVOS = { bajar: 'Bajar grasa', recomp: 'Recomposición', mantener: 'Mantener', ganar: 'Ganar músculo' };
+const OBJETIVOS = { bajar: 'Bajar grasa', recomp: 'Ganar músculo y bajar grasa', ganar: 'Ganar músculo', mantener: 'Mantener' };
 const HABITOS_BASE = [
   { id: 'agua', n: 'Agua', tipo: 'contador', meta: 8, u: 'vasos', rec: '11:00' },
   { id: 'pasos', n: 'Pasos', tipo: 'numero', meta: 8000, u: 'pasos', rec: '20:00' },
@@ -96,6 +96,7 @@ function estadoInicial() {
     comidas: [],
     pesos: [],
     habitos: [],
+    misAlimentos: [],
     registroHabitos: {},
     avisados: {}
   };
@@ -250,6 +251,8 @@ function vistaHoy() {
     <div class="macros">${barraMacro('Proteínas', t.p, m && m.prot, 'var(--prot)')}${barraMacro('Carbohidratos', t.c, m && m.carb, 'var(--carb)')}${barraMacro('Grasas', t.g, m && m.grasa, 'var(--fat)')}</div>
   </div>`;
 
+  if (m && ui.dia === hoyISO()) html += htmlIdeas(m, t);
+
   html += `<div class="titulo-seccion">Comidas</div>`;
   if (!comidas.length) {
     html += `<div class="lista"><div class="vacio">Todavía no registraste comidas ${ui.dia === hoyISO() ? 'hoy' : 'este día'}.</div></div>
@@ -270,6 +273,47 @@ function vistaHoy() {
   </div>
   <button class="fab" data-accion="nueva" aria-label="Agregar comida">${IC.mas}</button>`;
   return html;
+}
+
+/* ---------- Ideas de recetas ---------- */
+function ideasRecetas(m, t) {
+  const faltaP = Math.max(0, m.prot - t.p), faltaK = m.kcal - t.k;
+  const hora = new Date().getHours() + new Date().getMinutes() / 60;
+  const momento = (hora < 11 || (hora >= 15.5 && hora < 19.5)) ? 'dia' : 'comida';
+  return window.RECETAS.map((r) => {
+    let punt = (Math.min(r.p, faltaP) / (faltaP || 1)) * 3 + (r.p / r.k) * 25;
+    if (r.k > faltaK) punt -= ((r.k - faltaK) / 100) * 1.5;
+    if (r.m === momento) punt += 0.8;
+    return { r, punt };
+  }).sort((a, b) => b.punt - a.punt).map((x) => x.r);
+}
+function filaReceta(r) {
+  return `<button class="fila" data-accion="receta" data-n="${esc(r.n)}">
+    <div class="crece"><div class="principal">${esc(r.n)}</div>
+    <div class="secundario"><span style="color:var(--prot);font-weight:600">${fmt(r.p)} g proteína</span> · ${fmt(r.k)} kcal · ${r.min} min</div></div>${IC.chev}</button>`;
+}
+function htmlIdeas(m, t) {
+  const faltaP = Math.round(m.prot - t.p), faltaK = Math.round(m.kcal - t.k);
+  if (faltaK < 150 && faltaP < 15) return '';
+  const top = ideasRecetas(m, t).slice(0, 3);
+  return `<div class="titulo-seccion">Ideas para completar tus macros</div>
+    <p class="nota-seccion" style="margin-top:0">Te faltan ${faltaP > 0 ? `<strong>${fmt(faltaP)} g de proteína</strong> y ` : ''}${fmt(Math.max(0, faltaK))} kcal hoy.</p>
+    <div class="lista">${top.map(filaReceta).join('')}
+      <button class="fila" data-accion="ideas-todas"><span class="crece" style="color:var(--blue)">Ver todas las recetas</span>${IC.chev}</button></div>`;
+}
+function htmlReceta(r) {
+  return `<div class="tarjeta"><div class="totales">
+      <div><div class="num">${fmt(r.k)}</div><div class="etq">kcal</div></div>
+      <div><div class="num" style="color:var(--prot)">${fmt(r.p)}</div><div class="etq">Prot. g</div></div>
+      <div><div class="num" style="color:var(--carb)">${fmt(r.c)}</div><div class="etq">Carb. g</div></div>
+      <div><div class="num" style="color:var(--fat)">${fmt(r.g)}</div><div class="etq">Grasa g</div></div></div>
+      <div style="color:var(--text2);font-size:13px;margin-top:12px;text-align:center">Una porción · ${r.min} minutos</div></div>
+    <div class="titulo-seccion">Ingredientes</div>
+    <div class="lista">${r.ing.map((i) => `<div class="fila"><span class="crece" style="white-space:normal">${esc(i)}</span></div>`).join('')}</div>
+    <div class="titulo-seccion">Preparación</div>
+    <div class="lista">${r.pasos.map((p, i) => `<div class="fila" style="align-items:flex-start"><span style="color:var(--accent-ink);font-weight:700;min-width:18px">${i + 1}</span><span class="crece" style="white-space:normal">${esc(p)}</span></div>`).join('')}</div>
+    <button class="btn" data-accion="receta-agregar" data-n="${esc(r.n)}">La comí: agregar a hoy</button>
+    <p class="nota-seccion" style="margin-top:10px">Valores aproximados. Después la podés editar como cualquier comida.</p>`;
 }
 
 function puntosSemana(h) {
@@ -537,12 +581,15 @@ function pintarEditor() {
   if (c && ed) { const y = c.scrollTop; c.innerHTML = htmlEditor(); c.scrollTop = y; }
 }
 
+const normalizar = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const alimentosTodos = () => [...(S.misAlimentos || []).map((a) => ({ ...a, mio: true })), ...window.ALIMENTOS];
 function htmlResultados(q) {
-  const t = (q || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-  const lista = window.ALIMENTOS.filter((a) => !t || a.n.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').includes(t)).slice(0, t ? 30 : 12);
-  if (!lista.length) return '<div class="vacio">Sin resultados. Agregalo a mano abajo.</div>';
+  const palabras = normalizar(q).split(/\s+/).filter((w) => w.length > 1 && !['de', 'con', 'la', 'el', 'al', 'y'].includes(w));
+  const lista = alimentosTodos().filter((a) => { const n = normalizar(a.n); return palabras.every((w) => n.includes(w)); })
+    .slice(0, palabras.length ? 40 : 12);
+  if (!lista.length) return '<div class="vacio">Sin resultados. Agregalo a mano abajo y queda guardado para la próxima.</div>';
   return lista.map((a) => `<button class="fila" data-accion="ed-agregar-base" data-n="${esc(a.n)}">
-    <div class="crece"><div class="principal">${esc(a.n)}</div><div class="secundario">${esc(a.por)} · P ${fmt(a.p, 1)} · C ${fmt(a.c, 1)} · G ${fmt(a.g, 1)}</div></div>
+    <div class="crece"><div class="principal">${esc(a.n)}</div><div class="secundario">${a.mio ? '<span style="color:var(--accent-ink);font-weight:600">Tuyo</span> · ' : ''}${esc(a.por)} · P ${fmt(a.p, 1)} · C ${fmt(a.c, 1)} · G ${fmt(a.g, 1)}</div></div>
     <span class="valor">${fmt(a.k)} kcal</span><span style="color:var(--accent-ink);font-size:22px;line-height:1">+</span></button>`).join('');
 }
 
@@ -619,7 +666,7 @@ function leerImagen(archivo) {
         cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
         return cv.toDataURL('image/jpeg', q);
       };
-      const out = { mini: a(600, 0.75), grande: a(1024, 0.8) };
+      const out = { mini: a(600, 0.75), grande: a(768, 0.72) };
       URL.revokeObjectURL(url);
       res(out);
     };
@@ -792,11 +839,26 @@ const ACCIONES = {
   dia(el) { const n = sumarDias(ui.dia, +el.dataset.n); if (n <= hoyISO()) { ui.dia = n; render(); } },
   nueva() { abrirEditor(null); },
   editar(el) { const c = S.comidas.find((x) => x.id === el.dataset.id); if (c) abrirEditor(c); },
+  receta(el) {
+    const r = window.RECETAS.find((x) => x.n === el.dataset.n);
+    if (r) abrirHoja({ titulo: 'Receta', izq: 'Cerrar', cuerpo: `<h2 style="font-size:22px;margin:4px 4px 14px">${esc(r.n)}</h2>` + htmlReceta(r) });
+  },
+  'ideas-todas'() {
+    const m = metas(); if (!m) return;
+    abrirHoja({ titulo: 'Recetas', izq: 'Cerrar', cuerpo: `<p class="nota-seccion" style="margin:0 4px 14px">Ordenadas según lo que te falta hoy.</p>
+      <div class="lista">${ideasRecetas(m, totalesDia(hoyISO())).map(filaReceta).join('')}</div>` });
+  },
+  'receta-agregar'(el) {
+    const r = window.RECETAS.find((x) => x.n === el.dataset.n); if (!r) return;
+    S.comidas.push({ id: uid(), fecha: hoyISO(), hora: horaActual(), tipo: tipoPorHora(), nombre: r.n,
+      items: [{ n: r.n, por: '1 porción', k: r.k, p: r.p, c: r.c, g: r.g, x: 1 }], k: r.k, p: r.p, c: r.c, g: r.g, foto: false });
+    guardar(); ui.dia = hoyISO(); cerrarHoja(); render(); toast('Agregada a hoy');
+  },
   'cerrar-hoja'() { ed = null; cerrarHoja(); render(); },
   'ed-sin-foto'() { ed.foto = null; ed.fotoIA = null; ed.quitarFoto = true; pintarEditor(); },
   'ed-estimar'() { estimarFoto(); },
   'ed-agregar-base'(el) {
-    const a = window.ALIMENTOS.find((x) => x.n === el.dataset.n);
+    const a = alimentosTodos().find((x) => x.n === el.dataset.n);
     if (!a) return;
     ed.items.push({ n: a.n, por: a.por, k: a.k, p: a.p, c: a.c, g: a.g, x: 1 });
     const q = ($('#busqueda') || {}).value || '';
@@ -810,6 +872,12 @@ const ACCIONES = {
     if (!it.k && !it.p && !it.c && !it.g) { toast('Completá al menos las calorías'); return; }
     if (!it.k) it.k = Math.round(it.p * 4 + it.c * 4 + it.g * 9);
     ed.items.push(it);
+    if (n) { // queda guardado en "tus alimentos" para buscarlo la próxima vez
+      S.misAlimentos = (S.misAlimentos || []).filter((x) => normalizar(x.n) !== normalizar(n));
+      S.misAlimentos.unshift({ n, por: '1 porción', k: it.k, p: it.p, c: it.c, g: it.g });
+      guardar();
+      toast('Guardado en tus alimentos');
+    }
     pintarEditor();
   },
   'ed-quitar'(el) { ed.items.splice(+el.dataset.i, 1); pintarEditor(); },
@@ -869,6 +937,15 @@ const ACCIONES = {
     S = estadoInicial(); guardar(); render(); toast('Datos borrados');
   }
 };
+
+let ultimoToque = 0;
+document.addEventListener('touchend', (e) => {
+  const ahora = Date.now();
+  if (ahora - ultimoToque < 320 && !e.target.closest('input, textarea, select')) e.preventDefault();
+  ultimoToque = ahora;
+}, { passive: false });
+document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
+document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
 
 document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-accion]');
