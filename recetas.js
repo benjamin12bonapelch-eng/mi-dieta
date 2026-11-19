@@ -130,5 +130,46 @@ window.RECETAS = [
     n: 'Salmón o trucha con verduras al horno', min: 25, t: ['Cena', 'Almuerzo'], k: 450, p: 38, c: 18, g: 25,
     ing: ['160 g de salmón o trucha', 'Zapallito, morrón y cebolla', 'Limón, sal y eneldo'],
     pasos: ['Cortá las verduras y ponelas en una fuente.', 'Sumá el pescado encima con limón.', 'Horno fuerte 18 a 20 minutos.']
+  },
+  // Postres saludables
+  {
+    n: 'Yogur griego con frutas y proteína', min: 3, t: ['Postre', 'Merienda', 'Colación'], k: 280, p: 42, c: 20, g: 2,
+    ing: ['1 pote de yogur griego natural (170 g)', '1 medida de proteína en polvo (vainilla o frutilla)', '1 taza de frutillas o arándanos (100 g)'],
+    pasos: ['Mezclá la proteína con el yogur hasta que quede cremoso (si queda espeso, un chorrito de leche).', 'Sumá las frutas cortadas arriba.']
+  },
+  {
+    n: 'Mousse de chocolate proteica', min: 5, t: ['Postre', 'Merienda'], k: 230, p: 28, c: 10, g: 8,
+    ing: ['150 g de ricota descremada', 'Media medida de proteína sabor chocolate', '1 cucharada de cacao amargo', 'Edulcorante a gusto'],
+    pasos: ['Procesá o batí todo hasta que quede liso.', 'Llevalo a la heladera 30 minutos.']
+  },
+  {
+    n: 'Helado de banana y cacao con proteína', min: 5, t: ['Postre', 'Merienda'], k: 200, p: 14, c: 32, g: 2,
+    ing: ['1 banana cortada y congelada', 'Media medida de proteína en polvo', '1 cucharadita de cacao amargo', '50 ml de leche descremada'],
+    pasos: ['Procesá la banana congelada con el resto.', 'Comelo enseguida o freezer 20 minutos para que tome más cuerpo.']
+  },
+  {
+    n: 'Flan proteico', min: 15, t: ['Postre'], k: 150, p: 15, c: 12, g: 4,
+    ing: ['1 huevo y 2 claras', '200 ml de leche descremada', 'Edulcorante y esencia de vainilla', 'Rinde 2 porciones (valores por porción)'],
+    pasos: ['Batí todo.', 'Repartí en 2 flaneras y cociná a baño María en horno medio 25 minutos, o en microondas 3 a 4 minutos a potencia media.', 'Enfriá en la heladera.']
+  },
+  {
+    n: 'Brownie en taza de avena y proteína', min: 5, t: ['Postre', 'Merienda'], k: 230, p: 22, c: 25, g: 4,
+    ing: ['30 g de avena', 'Media medida de proteína sabor chocolate', '1 clara', '1 cucharada de cacao amargo', '2 cucharadas de leche'],
+    pasos: ['Mezclá todo en una taza.', 'Microondas 60 a 90 segundos.']
+  },
+  {
+    n: 'Gelatina light con yogur', min: 5, t: ['Postre', 'Colación'], k: 100, p: 9, c: 13, g: 0.5,
+    ing: ['1 porción de gelatina sin azúcar ya hecha', 'Medio pote de yogur descremado (100 g)'],
+    pasos: ['Serví la gelatina con el yogur arriba (o mezclá el yogur con la gelatina tibia antes de que cuaje).']
+  },
+  {
+    n: 'Manzana asada con canela y yogur', min: 15, t: ['Postre'], k: 160, p: 6, c: 32, g: 1,
+    ing: ['1 manzana', 'Canela', 'Medio pote de yogur descremado (100 g)'],
+    pasos: ['Cortá la manzana en gajos, espolvoreá canela.', 'Microondas 3 minutos o horno 15 minutos.', 'Serví con el yogur.']
+  },
+  {
+    n: 'Frutillas con chocolate amargo', min: 5, t: ['Postre'], k: 150, p: 3, c: 22, g: 7,
+    ing: ['200 g de frutillas', '15 g de chocolate 70% de cacao'],
+    pasos: ['Derretí el chocolate 20 segundos en microondas.', 'Bañá o rociá las frutillas.']
   }
 ];

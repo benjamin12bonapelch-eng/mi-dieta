@@ -3,7 +3,7 @@
    Los datos de cada usuario se guardan en su cuenta (ver cuenta.js) y en una copia local para usar sin conexión.
    Las fotos quedan solo en el teléfono (IndexedDB). */
 
-const TIPOS = ['Desayuno', 'Almuerzo', 'Merienda', 'Cena', 'Colación'];
+const TIPOS = ['Desayuno', 'Almuerzo', 'Merienda', 'Cena', 'Postre', 'Colación'];
 const ACTIVIDAD = [
   [1.2, 'Sedentaria', 'Poco o nada de ejercicio'],
   [1.375, 'Ligera', 'Ejercicio 1 a 3 días por semana'],
@@ -299,7 +299,7 @@ function htmlIdeas(m, t) {
   const top = ideasRecetas(m, t, etapa).slice(0, 3);
   return `<div class="titulo-seccion">Ideas de recetas</div>
     <div class="chips">${TIPOS.map((x) => `<button class="chip ${x === etapa ? 'activo' : ''}" data-accion="ideas-etapa" data-v="${x}">${x}</button>`).join('')}</div>
-    <p class="nota-seccion" style="margin-top:0">Para ${etapa === 'Colación' ? 'una colación' : 'tu ' + etapa.toLowerCase()}. Te faltan ${faltaP > 0 ? `<strong>${fmt(faltaP)} g de proteína</strong> y ` : ''}${fmt(Math.max(0, faltaK))} kcal hoy.</p>
+    <p class="nota-seccion" style="margin-top:0">${etapa === 'Postre' ? 'Postres que entran en tu día' : 'Para ' + (etapa === 'Colación' ? 'una colación' : 'tu ' + etapa.toLowerCase())}. Te faltan ${faltaP > 0 ? `<strong>${fmt(faltaP)} g de proteína</strong> y ` : ''}${fmt(Math.max(0, faltaK))} kcal hoy.</p>
     <div class="lista">${top.map((r) => filaReceta(r, etapa)).join('')}
       <button class="fila" data-accion="ideas-todas"><span class="crece" style="color:var(--blue)">Ver todas por momento del día</span>${IC.chev}</button></div>`;
 }
