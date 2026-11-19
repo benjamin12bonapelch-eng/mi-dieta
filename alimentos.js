@@ -156,5 +156,36 @@ window.ALIMENTOS = [
   { n: 'Bebida isotónica', por: '500 ml', k: 120, p: 0, c: 30, g: 0 },
   { n: 'Agua saborizada', por: '500 ml', k: 60, p: 0, c: 15, g: 0 },
   { n: 'Café cortado', por: '1 taza', k: 25, p: 1.5, c: 2, g: 1 },
-  { n: 'Licuado de banana con leche', por: '1 vaso (300 ml)', k: 230, p: 8, c: 38, g: 5 }
+  { n: 'Licuado de banana con leche', por: '1 vaso (300 ml)', k: 230, p: 8, c: 38, g: 5 },
+  // Frutos secos (valores por 30 g, un puñado; los gramos se ajustan en el plato)
+  { n: 'Nuez pecán (pecana)', por: '1 puñado (30 g)', k: 207, p: 2.8, c: 4.2, g: 21.6 },
+  { n: 'Nuez común', por: '1 puñado (30 g)', k: 196, p: 4.6, c: 4.1, g: 19.6 },
+  { n: 'Almendras', por: '1 puñado (30 g)', k: 174, p: 6.4, c: 6.5, g: 15 },
+  { n: 'Avellanas', por: '1 puñado (30 g)', k: 188, p: 4.5, c: 5, g: 18.3 },
+  { n: 'Castañas de cajú', por: '1 puñado (30 g)', k: 166, p: 5.5, c: 9, g: 13.2 },
+  { n: 'Pistachos pelados', por: '1 puñado (30 g)', k: 170, p: 6.1, c: 8.4, g: 13.6 },
+  { n: 'Nuez de Brasil', por: '1 puñado (30 g)', k: 197, p: 4.3, c: 3.5, g: 20 },
+  { n: 'Nuez de macadamia', por: '1 puñado (30 g)', k: 215, p: 2.4, c: 4.2, g: 22.8 },
+  { n: 'Piñones', por: '1 puñado (30 g)', k: 202, p: 4.1, c: 3.9, g: 20.5 },
+  { n: 'Maní sin sal', por: '1 puñado (30 g)', k: 170, p: 7.7, c: 4.8, g: 14.8 },
+  { n: 'Maní salado', por: '1 puñado (30 g)', k: 176, p: 7.3, c: 5, g: 15 },
+  { n: 'Garrapiñada de maní', por: '1 bolsita (30 g)', k: 150, p: 5, c: 15, g: 9 },
+  { n: 'Castañas asadas', por: '30 g', k: 74, p: 1, c: 16, g: 0.7 },
+  { n: 'Mix de frutos secos con pasas', por: '1 puñado (30 g)', k: 140, p: 4, c: 13, g: 9 },
+  { n: 'Mantequilla de almendras', por: '1 cucharada (16 g)', k: 98, p: 3.4, c: 3, g: 9 },
+  // Semillas
+  { n: 'Semillas de chía', por: '1 cucharada (15 g)', k: 73, p: 2.5, c: 6.3, g: 4.6 },
+  { n: 'Semillas de lino', por: '1 cucharada (15 g)', k: 80, p: 2.7, c: 4.3, g: 6.3 },
+  { n: 'Semillas de girasol peladas', por: '1 puñado (30 g)', k: 175, p: 6.2, c: 6, g: 15.4 },
+  { n: 'Semillas de zapallo', por: '1 puñado (30 g)', k: 170, p: 9, c: 3, g: 14.6 },
+  { n: 'Semillas de sésamo', por: '1 cucharada (15 g)', k: 86, p: 2.7, c: 3.5, g: 7.5 },
+  // Frutas desecadas
+  { n: 'Pasas de uva', por: '1 puñado (30 g)', k: 90, p: 0.9, c: 24, g: 0.1 },
+  { n: 'Dátiles', por: '3 unidades (30 g)', k: 85, p: 0.7, c: 22.5, g: 0.1 },
+  { n: 'Orejones de durazno o damasco', por: '1 puñado (30 g)', k: 72, p: 1, c: 19, g: 0.2 },
+  { n: 'Ciruelas pasas', por: '4 unidades (30 g)', k: 72, p: 0.7, c: 19, g: 0.1 },
+  { n: 'Arándanos deshidratados', por: '1 puñado (30 g)', k: 92, p: 0, c: 25, g: 0.4 },
+  { n: 'Higos secos', por: '2 unidades (30 g)', k: 75, p: 1, c: 19, g: 0.3 },
+  { n: 'Banana deshidratada (chips)', por: '1 puñado (30 g)', k: 155, p: 0.7, c: 17.5, g: 10 },
+  { n: 'Coco rallado', por: '2 cucharadas (15 g)', k: 99, p: 1, c: 3.5, g: 9.7 }
 ];
