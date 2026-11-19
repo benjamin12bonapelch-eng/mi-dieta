@@ -195,6 +195,8 @@ function render() {
   pest.classList.remove('oculto');
   const vistas = { hoy: vistaHoy, habitos: vistaHabitos, progreso: vistaProgreso, perfil: vistaPerfil };
   $('#app').innerHTML = (vistas[ui.tab] || vistaHoy)();
+  const chip = document.querySelector('.chip.activo'); // deja visible el momento elegido
+  if (chip) chip.parentElement.scrollLeft = chip.offsetLeft - chip.parentElement.clientWidth / 2 + chip.clientWidth / 2;
   $('#pestanas').innerHTML = `<div class="contenido">${PESTANAS.map(([id, n]) =>
     `<button class="${ui.tab === id ? 'activa' : ''}" data-accion="tab" data-tab="${id}">${IC[id]}<span>${n}</span></button>`).join('')}</div>`;
   cargarMiniaturas();
@@ -276,32 +278,32 @@ function vistaHoy() {
 }
 
 /* ---------- Ideas de recetas ---------- */
-function ideasRecetas(m, t) {
+// Ordena las recetas de un momento del día según lo que falta (prioriza proteína y no pasarse de calorías).
+function ideasRecetas(m, t, etapa) {
   const faltaP = Math.max(0, m.prot - t.p), faltaK = m.kcal - t.k;
-  const hora = new Date().getHours() + new Date().getMinutes() / 60;
-  const momento = (hora < 11 || (hora >= 15.5 && hora < 19.5)) ? 'dia' : 'comida';
-  return window.RECETAS.map((r) => {
+  return window.RECETAS.filter((r) => !etapa || r.t.includes(etapa)).map((r) => {
     let punt = (Math.min(r.p, faltaP) / (faltaP || 1)) * 3 + (r.p / r.k) * 25;
     if (r.k > faltaK) punt -= ((r.k - faltaK) / 100) * 1.5;
-    if (r.m === momento) punt += 0.8;
     return { r, punt };
   }).sort((a, b) => b.punt - a.punt).map((x) => x.r);
 }
-function filaReceta(r) {
-  return `<button class="fila" data-accion="receta" data-n="${esc(r.n)}">
+function filaReceta(r, etapa) {
+  return `<button class="fila" data-accion="receta" data-n="${esc(r.n)}" data-etapa="${esc(etapa || '')}">
     <div class="crece"><div class="principal">${esc(r.n)}</div>
     <div class="secundario"><span style="color:var(--prot);font-weight:600">${fmt(r.p)} g proteína</span> · ${fmt(r.k)} kcal · ${r.min} min</div></div>${IC.chev}</button>`;
 }
 function htmlIdeas(m, t) {
   const faltaP = Math.round(m.prot - t.p), faltaK = Math.round(m.kcal - t.k);
   if (faltaK < 150 && faltaP < 15) return '';
-  const top = ideasRecetas(m, t).slice(0, 3);
-  return `<div class="titulo-seccion">Ideas para completar tus macros</div>
-    <p class="nota-seccion" style="margin-top:0">Te faltan ${faltaP > 0 ? `<strong>${fmt(faltaP)} g de proteína</strong> y ` : ''}${fmt(Math.max(0, faltaK))} kcal hoy.</p>
-    <div class="lista">${top.map(filaReceta).join('')}
-      <button class="fila" data-accion="ideas-todas"><span class="crece" style="color:var(--blue)">Ver todas las recetas</span>${IC.chev}</button></div>`;
+  const etapa = ui.etapaIdeas || tipoPorHora();
+  const top = ideasRecetas(m, t, etapa).slice(0, 3);
+  return `<div class="titulo-seccion">Ideas de recetas</div>
+    <div class="chips">${TIPOS.map((x) => `<button class="chip ${x === etapa ? 'activo' : ''}" data-accion="ideas-etapa" data-v="${x}">${x}</button>`).join('')}</div>
+    <p class="nota-seccion" style="margin-top:0">Para ${etapa === 'Colación' ? 'una colación' : 'tu ' + etapa.toLowerCase()}. Te faltan ${faltaP > 0 ? `<strong>${fmt(faltaP)} g de proteína</strong> y ` : ''}${fmt(Math.max(0, faltaK))} kcal hoy.</p>
+    <div class="lista">${top.map((r) => filaReceta(r, etapa)).join('')}
+      <button class="fila" data-accion="ideas-todas"><span class="crece" style="color:var(--blue)">Ver todas por momento del día</span>${IC.chev}</button></div>`;
 }
-function htmlReceta(r) {
+function htmlReceta(r, etapa) {
   return `<div class="tarjeta"><div class="totales">
       <div><div class="num">${fmt(r.k)}</div><div class="etq">kcal</div></div>
       <div><div class="num" style="color:var(--prot)">${fmt(r.p)}</div><div class="etq">Prot. g</div></div>
@@ -312,7 +314,7 @@ function htmlReceta(r) {
     <div class="lista">${r.ing.map((i) => `<div class="fila"><span class="crece" style="white-space:normal">${esc(i)}</span></div>`).join('')}</div>
     <div class="titulo-seccion">Preparación</div>
     <div class="lista">${r.pasos.map((p, i) => `<div class="fila" style="align-items:flex-start"><span style="color:var(--accent-ink);font-weight:700;min-width:18px">${i + 1}</span><span class="crece" style="white-space:normal">${esc(p)}</span></div>`).join('')}</div>
-    <button class="btn" data-accion="receta-agregar" data-n="${esc(r.n)}">La comí: agregar a hoy</button>
+    <button class="btn" data-accion="receta-agregar" data-n="${esc(r.n)}" data-etapa="${esc(etapa || '')}">La comí: agregar a hoy${etapa ? ' (' + esc(etapa.toLowerCase()) + ')' : ''}</button>
     <p class="nota-seccion" style="margin-top:10px">Valores aproximados. Después la podés editar como cualquier comida.</p>`;
 }
 
@@ -841,16 +843,19 @@ const ACCIONES = {
   editar(el) { const c = S.comidas.find((x) => x.id === el.dataset.id); if (c) abrirEditor(c); },
   receta(el) {
     const r = window.RECETAS.find((x) => x.n === el.dataset.n);
-    if (r) abrirHoja({ titulo: 'Receta', izq: 'Cerrar', cuerpo: `<h2 style="font-size:22px;margin:4px 4px 14px">${esc(r.n)}</h2>` + htmlReceta(r) });
+    if (r) abrirHoja({ titulo: 'Receta', izq: 'Cerrar', cuerpo: `<h2 style="font-size:22px;margin:4px 4px 6px">${esc(r.n)}</h2>
+      <p class="nota-seccion" style="margin:0 4px 14px">Ideal para: ${esc(r.t.join(', ').toLowerCase())}</p>` + htmlReceta(r, el.dataset.etapa || r.t[0]) });
   },
+  'ideas-etapa'(el) { ui.etapaIdeas = el.dataset.v; render(); },
   'ideas-todas'() {
     const m = metas(); if (!m) return;
-    abrirHoja({ titulo: 'Recetas', izq: 'Cerrar', cuerpo: `<p class="nota-seccion" style="margin:0 4px 14px">Ordenadas según lo que te falta hoy.</p>
-      <div class="lista">${ideasRecetas(m, totalesDia(hoyISO())).map(filaReceta).join('')}</div>` });
+    const t = totalesDia(hoyISO());
+    abrirHoja({ titulo: 'Recetas', izq: 'Cerrar', cuerpo: `<p class="nota-seccion" style="margin:0 4px 6px">En cada momento, primero las que mejor completan lo que te falta hoy.</p>`
+      + TIPOS.map((x) => `<div class="titulo-seccion">${x}</div><div class="lista">${ideasRecetas(m, t, x).map((r) => filaReceta(r, x)).join('')}</div>`).join('') });
   },
   'receta-agregar'(el) {
     const r = window.RECETAS.find((x) => x.n === el.dataset.n); if (!r) return;
-    S.comidas.push({ id: uid(), fecha: hoyISO(), hora: horaActual(), tipo: tipoPorHora(), nombre: r.n,
+    S.comidas.push({ id: uid(), fecha: hoyISO(), hora: horaActual(), tipo: el.dataset.etapa || tipoPorHora(), nombre: r.n,
       items: [{ n: r.n, por: '1 porción', k: r.k, p: r.p, c: r.c, g: r.g, x: 1 }], k: r.k, p: r.p, c: r.c, g: r.g, foto: false });
     guardar(); ui.dia = hoyISO(); cerrarHoja(); render(); toast('Agregada a hoy');
   },
@@ -937,6 +942,12 @@ const ACCIONES = {
     S = estadoInicial(); guardar(); render(); toast('Datos borrados');
   }
 };
+
+// Alto real visible (en el iPhone instalado, 100vh puede incluir la barra de estado y tapar el encabezado de las hojas).
+function medirAlto() { document.documentElement.style.setProperty('--alto-visible', window.innerHeight + 'px'); }
+medirAlto();
+window.addEventListener('resize', medirAlto);
+window.addEventListener('orientationchange', () => setTimeout(medirAlto, 300));
 
 let ultimoToque = 0;
 document.addEventListener('touchend', (e) => {
