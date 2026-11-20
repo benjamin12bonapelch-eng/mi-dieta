@@ -92,7 +92,7 @@ function descargar(nombre, contenido, tipo) {
 function estadoInicial() {
   return {
     version: 1,
-    perfil: { nombre: '', sexo: '', edad: '', altura: '', peso: '', pesoMeta: '', actividad: 1.375, objetivo: 'bajar', ritmo: 'moderado', kcalManual: '', completo: false },
+    perfil: { nombre: '', sexo: '', edad: '', altura: '', peso: '', pesoMeta: '', actividad: 1.375, objetivo: 'bajar', ritmo: 'moderado', kcalManual: '', libresSemana: 5, completo: false },
     comidas: [],
     pesos: [],
     habitos: [],
@@ -172,6 +172,24 @@ function totalesDia(fecha) {
   for (const c of S.comidas) if (c.fecha === fecha) { t.k += c.k; t.p += c.p; t.c += c.c; t.g += c.g; }
   return t;
 }
+/* ---------- Comidas libres (80/20) ---------- */
+function lunesDe(fecha) { const d = aFecha(fecha); const dif = (d.getDay() + 6) % 7; d.setDate(d.getDate() - dif); return iso(d); }
+const libresPorSemana = () => (S.perfil.libresSemana === '' || S.perfil.libresSemana == null ? 5 : num(S.perfil.libresSemana));
+function libresUsadas(fecha) {
+  const ini = lunesDe(fecha), fin = sumarDias(ini, 6);
+  return S.comidas.filter((c) => c.libre && c.fecha >= ini && c.fecha <= fin).length;
+}
+function htmlLibres(fecha) {
+  const total = libresPorSemana();
+  if (!total) return '';
+  const usadas = libresUsadas(fecha), quedan = total - usadas;
+  const puntos = [...Array(Math.max(total, usadas))].map((_, i) => `<i class="${i < usadas ? (i < total ? 'usada' : 'pasada') : ''}"></i>`).join('');
+  return `<div class="lista"><div class="fila">
+    <div class="crece"><div class="principal">Comidas libres</div>
+      <div class="secundario">${quedan >= 0 ? `Te ${quedan === 1 ? 'queda' : 'quedan'} <strong>${quedan} de ${total}</strong> esta semana` : `<span style="color:var(--orange);font-weight:600">Usaste ${usadas} de ${total}</span> esta semana`}</div></div>
+    <div class="puntos-libres">${puntos}</div></div></div>`;
+}
+
 const valorHabito = (h, fecha) => (S.registroHabitos[fecha] || {})[h.id] || 0;
 const cumplido = (h, fecha) => { const v = valorHabito(h, fecha); return h.tipo === 'check' ? v > 0 : v >= num(h.meta); };
 function racha(h) {
@@ -253,6 +271,7 @@ function vistaHoy() {
     <div class="macros">${barraMacro('Proteínas', t.p, m && m.prot, 'var(--prot)')}${barraMacro('Carbohidratos', t.c, m && m.carb, 'var(--carb)')}${barraMacro('Grasas', t.g, m && m.grasa, 'var(--fat)')}</div>
   </div>`;
 
+  html += htmlLibres(ui.dia);
   if (m && ui.dia === hoyISO()) html += htmlIdeas(m, t);
 
   html += `<div class="titulo-seccion">Comidas</div>`;
@@ -263,7 +282,7 @@ function vistaHoy() {
     html += `<div class="lista">${comidas.map((c) => `<button class="fila" data-accion="editar" data-id="${c.id}">
         ${c.foto ? `<img class="miniatura" data-foto="${c.id}" alt="">` : `<div class="miniatura vacia">${IC.plato}</div>`}
         <div class="crece"><div class="principal">${esc(c.nombre)}</div>
-        <div class="secundario">${esc(c.tipo)} · ${esc(c.hora || '')} · P ${fmt(c.p)} · C ${fmt(c.c)} · G ${fmt(c.g)}</div></div>
+        <div class="secundario">${c.libre ? '<span class="etiqueta-libre">Libre</span> ' : ''}${esc(c.tipo)} · ${esc(c.hora || '')} · P ${fmt(c.p)} · C ${fmt(c.c)} · G ${fmt(c.g)}</div></div>
         <span class="valor">${fmt(c.k)} kcal</span>${IC.chev}</button>`).join('')}</div>`;
   }
 
@@ -424,6 +443,32 @@ function grafCalorias(m) {
   </svg></div>`;
 }
 
+// Semana en curso (lunes a domingo): compara solo los días ya terminados que tienen comidas cargadas.
+function htmlSemana(m) {
+  if (!m) return '';
+  const ini = lunesDe(hoyISO()), hoy = hoyISO();
+  const diasPasados = difDias(ini, hoy); // lunes..ayer
+  let comido = 0, cargados = 0;
+  for (let i = 0; i < diasPasados; i++) { const k = totalesDia(sumarDias(ini, i)).k; if (k > 0) { comido += k; cargados++; } }
+  const dif = Math.round(comido - m.kcal * cargados);
+  const quedan = 7 - diasPasados; // incluye hoy
+  const usadas = libresUsadas(hoy), total = libresPorSemana();
+  let texto;
+  if (!cargados) texto = diasPasados ? 'Todavía no hay días anteriores cargados esta semana.' : 'La semana empieza hoy.';
+  else if (dif <= 0) texto = `En ${cargados === 1 ? 'el día que cargaste' : `los ${cargados} días que cargaste`} vas <strong>${fmt(-dif)} kcal por debajo</strong> de tu meta: es margen a favor para lo que queda de la semana (por ejemplo, una salida).`;
+  else texto = `En ${cargados === 1 ? 'el día que cargaste' : `los ${cargados} días que cargaste`} vas <strong>${fmt(dif)} kcal por encima</strong> de tu meta. Para compensar, alcanza con unas ${fmt(Math.min(500, dif / quedan))} kcal menos por día en los ${quedan} días que quedan.`;
+  if (cargados && cargados < diasPasados) texto += ` Hay ${diasPasados - cargados} ${diasPasados - cargados === 1 ? 'día' : 'días'} sin comidas cargadas que no cuentan.`;
+  return `<div class="titulo-seccion">Esta semana</div>
+    <div class="tarjeta">
+      <div class="estadisticas" style="margin-top:0">
+        <div><div class="etq">Días cargados</div><div class="num">${cargados} de ${diasPasados}</div></div>
+        <div><div class="etq">Diferencia</div><div class="num ${cargados ? (dif <= 0 ? 'verde' : 'rojo') : ''}">${cargados ? (dif > 0 ? '+' : '') + fmt(dif) : '–'}</div></div>
+        <div><div class="etq">Libres</div><div class="num" ${usadas > total ? 'style="color:var(--orange)"' : ''}>${usadas} de ${total}</div></div>
+      </div>
+      <div style="color:var(--text2);font-size:14px;margin-top:12px;line-height:1.4">${texto}</div>
+    </div>`;
+}
+
 function vistaProgreso() {
   const m = metas();
   const ps = S.pesos;
@@ -467,6 +512,7 @@ function vistaProgreso() {
       `<button class="fila" data-accion="peso-borrar" data-fecha="${p.fecha}"><span class="crece">${esc(nombreDia(p.fecha))}</span><span class="valor">${fmt(p.kg, 1)} kg</span></button>`).join('')}</div>
       <p class="nota-seccion">Tocá un registro para borrarlo.</p>` : ''}
 
+    ${htmlSemana(m)}
     <div class="titulo-seccion">Calorías, últimos 7 días</div>
     <div class="tarjeta">${grafCalorias(m)}
       <div class="estadisticas"><div><div class="etq">Promedio</div><div class="num">${prom ? fmt(prom) : '–'}</div></div>
@@ -513,7 +559,8 @@ function vistaPerfil() {
           <div><div class="num" style="color:var(--carb)">${m.carb} g</div><div class="etq">Carbohidratos</div></div>
           <div><div class="num" style="color:var(--fat)">${m.grasa} g</div><div class="etq">Grasas</div></div></div></div>`
       : '<div class="aviso">Completá sexo, edad, altura y peso para calcular tu plan.</div>'}
-    <div class="lista">${filaNum('Meta manual', 'kcalManual', p.kcalManual, 'kcal (opcional)')}</div>
+    <div class="lista">${filaNum('Meta manual', 'kcalManual', p.kcalManual, 'kcal (opcional)')}
+      <div class="fila"><span class="crece">Comidas libres por semana</span><input inputmode="numeric" data-perfil="libresSemana" value="${esc(String(libresPorSemana()))}" style="width:60px"></div></div>
     <p class="nota-seccion">Cálculo con la fórmula Mifflin-St Jeor: ${m && m.kcal !== m.mant ? (m.kcal < m.mant ? 'déficit' : 'superávit') + ' del ' + Math.abs(Math.round((m.kcal / m.mant - 1) * 100)) + '%' : 'sin ajuste'}, proteína de ${{ bajar: '2,0', recomp: '2,2', mantener: '1,6', ganar: '1,8' }[p.objetivo]} g por kilo. Es una estimación: revisala con la evolución del peso cada 2 o 3 semanas. No reemplaza la consulta con un profesional.</p>
 
     <div class="titulo-seccion">Cuenta</div>
@@ -570,7 +617,7 @@ let ed = null;
 
 function abrirEditor(comida) {
   if (comida) {
-    ed = { ...JSON.parse(JSON.stringify(comida)), foto: null, aviso: '', nuevo: false };
+    ed = { ...JSON.parse(JSON.stringify(comida)), foto: null, aviso: '', nuevo: false, libreOriginal: !!comida.libre };
     if (comida.foto) fotoLeer(comida.id).then((f) => { if (ed && ed.id === comida.id && f) { ed.foto = f; pintarEditor(); } });
   } else {
     ed = { id: null, fecha: ui.dia, hora: ui.dia === hoyISO() ? horaActual() : '13:00', tipo: tipoPorHora(), nombre: '', items: [],
@@ -688,6 +735,8 @@ function htmlEditor() {
     <div class="fila"><span class="crece">Nombre</span><input data-ed="nombre" value="${esc(ed.nombre)}" placeholder="Automático"></div>
     <div class="fila"><span class="crece">Fecha</span><input type="date" data-ed="fecha" value="${ed.fecha}" max="${hoyISO()}" style="width:auto"></div>
     <div class="fila"><span class="crece">Hora</span><input type="time" data-ed="hora" value="${ed.hora}" style="width:auto"></div>
+    <label class="fila"><div class="crece"><div>Comida libre</div><div class="secundario">${(() => { const q = libresPorSemana() - libresUsadas(ed.fecha || hoyISO()) + (ed.libreOriginal ? 1 : 0); return q > 0 ? `Te ${q === 1 ? 'queda' : 'quedan'} ${q} esta semana` : 'Ya usaste las de esta semana'; })()}</div></div>
+      <input type="checkbox" class="interruptor" data-ed="libre" ${ed.libre ? 'checked' : ''}></label>
   </div>
   <button class="btn" data-accion="ed-guardar">Guardar comida</button>
   ${ed.nuevo ? '' : '<button class="btn peligro" data-accion="ed-borrar">Eliminar comida</button>'}`;
@@ -781,7 +830,8 @@ function guardarComida() {
   const comida = {
     id, fecha: ed.fecha || ui.dia, hora: ed.hora || '', tipo: ed.tipo, nombre,
     items: ed.items.map(({ n, por, k, p, c, g, x }) => ({ n, por, k, p, c, g, x: x ?? 1 })), // la marca de IA no se guarda
-    k: t.k, p: t.p, c: t.c, g: t.g, foto: !!ed.foto || (!ed.quitarFoto && !!(previa && previa.foto))
+    k: t.k, p: t.p, c: t.c, g: t.g, foto: !!ed.foto || (!ed.quitarFoto && !!(previa && previa.foto)),
+    ...(ed.libre ? { libre: true } : {})
   };
   if (ed.foto) fotoGuardar(id, ed.foto);
   else if (ed.quitarFoto) fotoBorrar(id);
@@ -1073,7 +1123,8 @@ document.addEventListener('change', async (e) => {
     if (b && v > 0) it.x = Math.min(5000, v) / b.cant;
     pintarEditor();
   } else if (el.dataset.ed && ed) {
-    ed[el.dataset.ed] = el.value;
+    ed[el.dataset.ed] = el.type === 'checkbox' ? el.checked : el.value;
+    if (el.dataset.ed === 'libre') toast(el.checked ? 'Marcada como comida libre' : 'Ya no es comida libre');
   } else if (el.classList.contains('archivo-foto') && el.files[0] && ed) {
     try {
       const f = await leerImagen(el.files[0]);

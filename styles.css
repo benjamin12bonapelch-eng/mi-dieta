@@ -319,3 +319,16 @@ button { cursor: pointer; }
 .editar-item { background: var(--card2); padding: 4px 0 4px; border-top: .5px solid var(--sep); }
 .editar-item .fila input.izq { background: var(--card); border-radius: 8px; padding: 8px 10px; }
 .editar-item .campos-item input { background: var(--card); }
+
+/* Comidas libres */
+.puntos-libres { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; max-width: 120px; }
+.puntos-libres i { width: 12px; height: 12px; border-radius: 50%; background: var(--card2); border: 1.5px solid var(--text3); }
+.puntos-libres i.usada { background: var(--orange); border-color: var(--orange); }
+.puntos-libres i.pasada { background: var(--red); border-color: var(--red); }
+.etiqueta-libre { display: inline-block; background: var(--orange); color: #fff; font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 6px; }
+/* Interruptor estilo iOS */
+.fila .interruptor, .interruptor { -webkit-appearance: none; appearance: none; width: 51px !important; height: 31px; border-radius: 16px; background: var(--card2); position: relative; flex: none; cursor: pointer; transition: background .2s; border: 0; margin: 0; }
+@media (prefers-color-scheme: light) { .fila .interruptor { background: rgba(120, 120, 128, .16); } }
+.interruptor::after { content: ''; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,.2); transition: transform .2s; }
+.fila .interruptor:checked, .interruptor:checked { background: var(--accent); }
+.interruptor:checked::after { transform: translateX(20px); }
