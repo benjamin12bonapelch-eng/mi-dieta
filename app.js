@@ -583,12 +583,16 @@ function pintarEditor() {
   if (c && ed) { const y = c.scrollTop; c.innerHTML = htmlEditor(); c.scrollTop = y; }
 }
 
+// Cada palabra coincide en singular o plural ("bananas" encuentra "Banana", "nueces" encuentra "Nuez").
+const raices = (w) => [w, w.replace(/ces$/, 'z'), w.replace(/es$/, ''), w.replace(/s$/, '')].filter((x) => x.length > 1);
+function buscarAlimentos(palabras) {
+  return alimentosTodos().filter((a) => { const n = normalizar(a.n); return palabras.every((w) => raices(w).some((r) => n.includes(r))); });
+}
 const normalizar = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 const alimentosTodos = () => [...(S.misAlimentos || []).map((a) => ({ ...a, mio: true })), ...window.ALIMENTOS];
 function htmlResultados(q) {
   const palabras = normalizar(q).split(/\s+/).filter((w) => w.length > 1 && !['de', 'con', 'la', 'el', 'al', 'y'].includes(w));
-  const lista = alimentosTodos().filter((a) => { const n = normalizar(a.n); return palabras.every((w) => n.includes(w)); })
-    .slice(0, palabras.length ? 40 : 12);
+  const lista = buscarAlimentos(palabras).slice(0, palabras.length ? 40 : 12);
   if (!lista.length) return '<div class="vacio">Sin resultados. Agregalo a mano abajo y queda guardado para la próxima.</div>';
   return lista.map((a) => `<button class="fila" data-accion="ed-agregar-base" data-n="${esc(a.n)}">
     <div class="crece"><div class="principal">${esc(a.n)}</div><div class="secundario">${a.mio ? '<span style="color:var(--accent-ink);font-weight:600">Tuyo</span> · ' : ''}${esc(a.por)} · P ${fmt(a.p, 1)} · C ${fmt(a.c, 1)} · G ${fmt(a.g, 1)}</div></div>
@@ -608,6 +612,23 @@ function controlCantidad(it, i) {
   return `<div class="mult"><button data-accion="ed-gramos" data-i="${i}" data-d="-1" aria-label="Menos">−</button>
     <label class="gramos"><input inputmode="decimal" data-ed-gramos="${i}" value="${actual}" aria-label="Cantidad en ${b.u}"><span>${b.u}</span></label>
     <button data-accion="ed-gramos" data-i="${i}" data-d="1" aria-label="Más">+</button></div>`;
+}
+
+// Editor de un alimento del plato: corregir nombre y valores, o cambiarlo por otro de la lista.
+function htmlEditarItem(it, i) {
+  const x = it.x ?? 1;
+  return `<div class="editar-item">
+    <div class="fila"><input class="izq" data-it-campo="n" value="${esc(it.n)}" placeholder="Nombre" style="font-weight:600"></div>
+    <div class="campos-item">
+      <label>kcal<input inputmode="decimal" data-it-campo="k" value="${Math.round(it.k * x)}"></label>
+      <label>Prot. g<input inputmode="decimal" data-it-campo="p" value="${r1(it.p * x)}"></label>
+      <label>Carb. g<input inputmode="decimal" data-it-campo="c" value="${r1(it.c * x)}"></label>
+      <label>Grasa g<input inputmode="decimal" data-it-campo="g" value="${r1(it.g * x)}"></label>
+    </div>
+    <p class="nota-seccion" style="margin:0 16px 10px">Valores de la porción actual. O cambialo por uno de la lista (se mantienen los gramos):</p>
+    <div class="buscador" style="margin:0 16px 8px">${IC.lupa}<input id="it-busca" placeholder="Ej.: milanesa pollo horno" autocomplete="off"></div>
+    <div id="it-resultados"></div>
+  </div>`;
 }
 
 function htmlEditor() {
@@ -647,11 +668,12 @@ function htmlEditor() {
   h += `<div class="titulo-seccion">En este plato</div>`;
   if (ed.items.length) {
     h += `<div class="lista">${ed.items.map((it, i) => `<div class="fila">
-      <div class="crece"><div class="principal" style="white-space:normal">${esc(it.n)}</div>
+      <div class="crece"><div class="principal" style="white-space:normal" data-accion="ed-editar-item" data-i="${i}">${esc(it.n)}</div>
       <div class="secundario">${baseGramos(it) ? '' : esc(it.por || '') + (it.por ? ' · ' : '')}${fmt(it.k * (it.x ?? 1))} kcal · P ${fmt(it.p * (it.x ?? 1), 1)} · C ${fmt(it.c * (it.x ?? 1), 1)} · G ${fmt(it.g * (it.x ?? 1), 1)}</div>
-      <button class="quitar" data-accion="ed-quitar" data-i="${i}">Quitar</button></div>
+      <div style="display:flex;gap:4px"><button class="quitar" style="color:var(--blue)" data-accion="ed-editar-item" data-i="${i}">${ed.editando === i ? 'Listo' : 'Editar'}</button>
+      <button class="quitar" data-accion="ed-quitar" data-i="${i}">Quitar</button></div></div>
       ${controlCantidad(it, i)}
-    </div>`).join('')}</div>
+    </div>${ed.editando === i ? htmlEditarItem(it, i) : ''}`).join('')}</div>
     <div class="tarjeta"><div class="totales">
       <div><div class="num">${fmt(t.k)}</div><div class="etq">kcal</div></div>
       <div><div class="num" style="color:var(--prot)">${fmt(t.p, 1)}</div><div class="etq">Prot. g</div></div>
@@ -903,7 +925,24 @@ const ACCIONES = {
     }
     pintarEditor();
   },
-  'ed-quitar'(el) { ed.items.splice(+el.dataset.i, 1); pintarEditor(); },
+  'ed-quitar'(el) { ed.items.splice(+el.dataset.i, 1); ed.editando = null; pintarEditor(); },
+  'ed-editar-item'(el) {
+    const i = +el.dataset.i;
+    ed.editando = ed.editando === i ? null : i;
+    pintarEditor();
+    if (ed.editando === i) { const b = $('#it-busca'); if (b) b.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+  },
+  'ed-reemplazar'(el) {
+    const i = ed.editando, viejo = ed.items[i];
+    const a = alimentosTodos().find((x) => x.n === el.dataset.n);
+    if (!viejo || !a) return;
+    const nuevo = { n: a.n, por: a.por, k: a.k, p: a.p, c: a.c, g: a.g, x: 1 };
+    const bv = baseGramos(viejo), bn = baseGramos(nuevo);
+    if (bv && bn && bn.cant) nuevo.x = (bv.cant * (viejo.x ?? 1)) / bn.cant; // conserva los gramos
+    ed.items[i] = nuevo; ed.editando = null;
+    pintarEditor();
+    toast('Cambiado por ' + a.n);
+  },
   'ed-mult'(el) {
     const it = ed.items[+el.dataset.i];
     it.x = Math.max(0.25, Math.min(10, (it.x ?? 1) + 0.25 * +el.dataset.d));
@@ -992,6 +1031,13 @@ document.addEventListener('click', (e) => {
 });
 
 document.addEventListener('input', (e) => {
+  if (e.target.id === 'it-busca' && ed) {
+    const palabras = normalizar(e.target.value).split(/\s+/).filter((w) => w.length > 1 && !['de', 'con', 'la', 'el', 'al', 'y'].includes(w));
+    $('#it-resultados').innerHTML = palabras.length ? `<div class="lista" style="margin:0 16px 12px">${buscarAlimentos(palabras).slice(0, 8).map((a) =>
+      `<button class="fila" data-accion="ed-reemplazar" data-n="${esc(a.n)}"><div class="crece"><div class="principal" style="white-space:normal">${esc(a.n)}</div>
+       <div class="secundario">${esc(a.por)} · ${fmt(a.k)} kcal · P ${fmt(a.p, 1)}</div></div><span style="color:var(--blue);font-size:14px">Usar</span></button>`).join('')
+      || '<div class="vacio">Sin resultados.</div>'}</div>` : '';
+  }
   if (e.target.id === 'busqueda') {
     const r = $('#resultados'), q = e.target.value;
     r.innerHTML = q.trim() || !ed.items.length ? htmlResultados(q) : '';
@@ -1014,6 +1060,13 @@ document.addEventListener('change', async (e) => {
     h[c] = c === 'meta' ? num(el.value) : el.value;
     if (c === 'tipo') { if (h.tipo === 'check') h.meta = 1; else if (!h.meta || h.meta === 1) h.meta = h.tipo === 'contador' ? 8 : 1; $('#hoja-cuerpo').innerHTML = htmlEditarHabitos(); }
     guardar();
+  } else if (el.dataset.itCampo && ed && ed.editando != null) {
+    const it = ed.items[ed.editando], c = el.dataset.itCampo;
+    if (!it) return;
+    if (c === 'n') { it.n = el.value.trim() || it.n; delete it.ia; }
+    else { const v = Math.max(0, num(el.value)); it[c] = v / (it.x ?? 1); if (c === 'k') it[c] = Math.round(it[c]); }
+    // actualiza totales sin cerrar el editor
+    const y = $('#hoja-cuerpo').scrollTop; pintarEditor(); $('#hoja-cuerpo').scrollTop = y;
   } else if (el.dataset.edGramos && ed) {
     const it = ed.items[+el.dataset.edGramos], b = it && baseGramos(it);
     const v = num(el.value);

@@ -314,3 +314,8 @@ button { cursor: pointer; }
 .gramos { display: flex; align-items: baseline; gap: 2px; background: var(--card2); border-radius: 8px; padding: 6px 8px; }
 .gramos input { width: 46px; border: 0; background: none; outline: none; text-align: right; color: var(--text); font-variant-numeric: tabular-nums; padding: 0; }
 .gramos span { color: var(--text2); font-size: 13px; }
+
+/* Editor de un alimento del plato */
+.editar-item { background: var(--card2); padding: 4px 0 4px; border-top: .5px solid var(--sep); }
+.editar-item .fila input.izq { background: var(--card); border-radius: 8px; padding: 8px 10px; }
+.editar-item .campos-item input { background: var(--card); }
